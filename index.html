@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#06131a" />
+    <meta name="description" content="Transformers: Wildlands — a fan-made open-world forest action game. Recover Autobot relics, unlock weapons and abilities, and defeat the Decepticon warlord." />
+    <title>TRANSFORMERS // WILDLANDS</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game" aria-label="Transformers Wildlands game view"></canvas>
+
+      <div id="vignette"></div>
+      <div id="damage-flash"></div>
+      <div id="speed-lines"></div>
+      <div id="scanlines"></div>
+
+      <div id="hud" class="hidden" aria-live="polite">
+        <section id="player-panel" class="panel">
+          <div class="id-row">
+            <div class="avatar">
+              <svg viewBox="0 0 40 40" aria-hidden="true">
+                <path d="M20 4 33 11v10c0 8-6 13-13 15-7-2-13-7-13-15V11z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 14h16l-2 5h-4l2 4h-4l-4 9-3-8h4l-3-5h-4z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="id-text">
+              <div class="id-name">ARC-7 <span>// AUTOBOT SCOUT</span></div>
+              <div class="id-status"><i></i> SIGNAL STABLE</div>
+            </div>
+            <div class="score"><span>ENERGON</span><b id="score">0000</b></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label"><span>INTEGRITY</span><b id="hp-text">100</b></div>
+            <div class="bar health"><div id="hp-fill"></div><div class="bar-ticks"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label"><span>ENERGON</span><b id="en-text">100</b></div>
+            <div class="bar energon"><div id="en-fill"></div><div class="bar-ticks"></div></div>
+          </div>
+          <div class="ability-row">
+            <div class="ability" id="ab-shield" data-key="Q"><span class="ab-glyph">◈</span><span class="ab-name">AEGIS</span><i class="ab-cd"></i></div>
+            <div class="ability locked" id="ab-emp" data-key="E"><span class="ab-glyph">⌁</span><span class="ab-name">EMP</span><i class="ab-cd"></i></div>
+            <div class="ability locked" id="ab-jets" data-key="SPACE"><span class="ab-glyph">▲</span><span class="ab-name">JETS</span></div>
+            <div class="ability locked" id="ab-drive" data-key="SHIFT"><span class="ab-glyph">»</span><span class="ab-name">DRIVE</span></div>
+          </div>
+        </section>
+
+        <section id="map-panel" class="panel">
+          <div class="map-head"><span>VERDANT BASIN</span><b>N</b></div>
+          <div class="map-wrap">
+            <canvas id="minimap" width="220" height="220"></canvas>
+            <div class="map-ring"></div>
+            <div class="map-coords" id="coords">X 0000 / Z 0000</div>
+          </div>
+          <div class="map-foot">
+            <span>AUTOBOT RELICS</span>
+            <b><span id="relic-count">0</span><i>/</i>6</b>
+          </div>
+        </section>
+
+        <section id="objective-panel" class="panel">
+          <div class="obj-eyebrow"><i></i> PRIMARY DIRECTIVE</div>
+          <div class="obj-title" id="obj-title">RECOVER THE RELIC CORES</div>
+          <div class="obj-body" id="obj-body">Six Autobot caches are scattered across the basin. Find them to unlock new weapons and abilities.</div>
+          <div class="obj-progress"><div id="obj-fill"></div></div>
+          <div class="obj-distance"><span id="obj-distance">—</span><span id="obj-hint">FOLLOW THE SIGNAL</span></div>
+        </section>
+
+        <section id="weapon-panel" class="panel">
+          <div class="weapon-icon" id="weapon-icon">
+            <svg viewBox="0 0 44 24" aria-hidden="true"><path d="M2 9h24v6H16v6H9v-6H2zM26 8h10v8H26zM36 10h6v4h-6z" fill="currentColor"/></svg>
+          </div>
+          <div class="weapon-info">
+            <div class="weapon-name" id="weapon-name">ENERGON PISTOL</div>
+            <div class="weapon-desc" id="weapon-desc">SEMI-AUTO // INFINITE CELL</div>
+            <div class="heat"><div id="heat-fill"></div><span>HEAT</span></div>
+          </div>
+          <div class="weapon-slots">
+            <span class="slot active" data-slot="1">1</span>
+            <span class="slot locked" data-slot="2">2</span>
+            <span class="slot locked" data-slot="3">3</span>
+          </div>
+        </section>
+
+        <div id="crosshair" class="crosshair">
+          <i class="ch-t"></i><i class="ch-r"></i><i class="ch-b"></i><i class="ch-l"></i><i class="ch-dot"></i>
+          <div class="ch-lock">LOCK</div>
+        </div>
+        <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+
+        <div id="reticle-bracket" class="hidden"></div>
+
+        <div id="boss-bar" class="hidden">
+          <div class="boss-head"><span>DECEPTICON WARLORD</span><b id="boss-name">VULCAN</b></div>
+          <div class="boss-track"><div id="boss-fill"></div><i></i><i></i><i></i></div>
+          <div class="boss-sub" id="boss-sub">TITAN'S REST // THREAT LEVEL OMEGA</div>
+        </div>
+
+        <div id="banner">
+          <div class="banner-kicker">AUTOBOT RELIC RECOVERED</div>
+          <div class="banner-title" id="banner-title">ION REPEATER</div>
+          <div class="banner-desc" id="banner-desc">RAPID-FIRE ENERGON WEAPON ONLINE</div>
+        </div>
+
+        <div id="toast"><i></i><span id="toast-text">SIGNAL DETECTED</span></div>
+        <div id="prompt" class="hidden"><kbd>F</kbd><span>TRANSFORM</span></div>
+
+        <div id="hint-bar">
+          <span><kbd>WASD</kbd> MOVE</span>
+          <span><kbd>MOUSE</kbd> LOOK</span>
+          <span><kbd>LMB</kbd> FIRE</span>
+          <span><kbd>F</kbd> TRANSFORM</span>
+          <span><kbd>Q</kbd> SHIELD</span>
+          <span><kbd>1-3</kbd> WEAPON</span>
+        </div>
+
+        <div id="compass">
+          <div class="compass-strip" id="compass-strip"></div>
+          <div class="compass-mark"></div>
+        </div>
+
+        <div id="mode-tag"><span class="mode-dot"></span><b id="mode-name">ROBOT MODE</b></div>
+        <div id="feed"></div>
+      </div>
+
+      <div id="touch-ui" class="hidden">
+        <div id="joystick"><div id="joystick-ring"></div><div id="joystick-stick"></div><span>MOVE</span></div>
+        <div id="touch-buttons">
+          <button id="btn-ability" class="tbtn small" aria-label="Ability"><span class="tb-ico">◈</span><span class="tb-lbl">AEGIS</span></button>
+          <button id="btn-weapon" class="tbtn small" aria-label="Switch weapon"><span class="tb-ico">▣</span><span class="tb-lbl">WPN</span></button>
+          <button id="btn-jump" class="tbtn small" aria-label="Jump"><span class="tb-ico">▲</span><span class="tb-lbl">JUMP</span></button>
+          <button id="btn-transform" class="tbtn small" aria-label="Transform"><span class="tb-ico">⇄</span><span class="tb-lbl">SHIFT</span></button>
+          <button id="btn-fire" class="tbtn fire" aria-label="Fire"><span class="tb-ico">✸</span><span class="tb-lbl">FIRE</span></button>
+        </div>
+      </div>
+
+      <div id="start-screen">
+        <div class="start-grid"></div>
+        <div class="start-top">
+          <div class="start-chip"><i></i> AUTOBOT FIELD PROTOCOL // 07</div>
+          <div class="start-chip right">SECTOR 12 // VERDANT BASIN</div>
+        </div>
+        <div class="start-content">
+          <div class="start-kicker">THE ARK IS LOST. <b>THE FOREST IS NOT.</b></div>
+          <h1 class="logo">
+            <span class="logo-top">TRANS</span><span class="logo-bottom">FORMERS</span>
+            <em>WILDLANDS</em>
+          </h1>
+          <p class="tagline">Crash-landed behind enemy lines. Recover the Autobot relic cores, unlock your arsenal, and bring down the Decepticon warlord before the basin falls.</p>
+          <div class="start-actions">
+            <button id="deploy" class="deploy"><span class="deploy-inner">DEPLOY AUTOBOT <b>▸</b></span><i class="deploy-load"></i></button>
+            <div class="start-sub">ONE PLAYER // OPEN WORLD // CONTROLLER READY</div>
+          </div>
+          <div class="start-controls">
+            <div><kbd>WASD</kbd><span>MOVE / DRIVE</span></div>
+            <div><kbd>MOUSE</kbd><span>AIM / LOOK</span></div>
+            <div><kbd>LMB</kbd><span>FIRE</span></div>
+            <div><kbd>F</kbd><span>TRANSFORM</span></div>
+            <div><kbd>SHIFT</kbd><span>SPRINT / BOOST</span></div>
+            <div><kbd>Q</kbd><span>SHIELD</span></div>
+          </div>
+        </div>
+        <div class="start-bottom">
+          <span>FAN-MADE OPEN-WORLD TRIBUTE</span>
+          <span class="start-status"><i></i><b id="start-status">SYNCING ENERGON GRID</b></span>
+          <span>BUILD 1.0.7 // THREE.JS</span>
+        </div>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      </div>
+
+      <div id="pause-screen" class="overlay hidden">
+        <div class="overlay-card panel">
+          <div class="overlay-kicker">SIGNAL SUSPENDED</div>
+          <h2>PAUSED</h2>
+          <p>The basin holds its breath.</p>
+          <div class="pause-actions">
+            <button id="resume" class="btn primary">RESUME <b>▸</b></button>
+            <button id="mute" class="btn">AUDIO: ON</button>
+            <button id="restart" class="btn danger">REDEPLOY</button>
+          </div>
+          <div class="pause-controls">
+            <span><kbd>WASD</kbd> MOVE</span><span><kbd>F</kbd> TRANSFORM</span><span><kbd>Q</kbd> SHIELD</span><span><kbd>E</kbd> EMP</span><span><kbd>SPACE</kbd> JUMP</span><span><kbd>ESC</kbd> PAUSE</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="death-screen" class="overlay hidden">
+        <div class="overlay-card panel danger-card">
+          <div class="overlay-kicker">SPARK SIGNATURE LOST</div>
+          <h2>OFFLINE</h2>
+          <p>Your chassis was recovered by the basin's repair swarm. The Decepticons are still out there.</p>
+          <div class="pause-actions">
+            <button id="respawn" class="btn primary">REBOOT <b>▸</b></button>
+          </div>
+          <div class="stat-row"><span>RELICS RECOVERED</span><b id="death-relics">0 / 6</b></div>
+        </div>
+      </div>
+
+      <div id="victory-screen" class="overlay hidden">
+        <div class="overlay-card panel victory-card">
+          <div class="overlay-kicker">DECEPTICON SIGNAL TERMINATED</div>
+          <h2>BASIN SECURED</h2>
+          <p>VULCAN is scrap. The relic cores are safe, and the forest belongs to the Autobots once more.</p>
+          <div class="stat-grid">
+            <div><span>MISSION TIME</span><b id="stat-time">00:00</b></div>
+            <div><span>ENERGON</span><b id="stat-score">0</b></div>
+            <div><span>RELICS</span><b id="stat-relics">6 / 6</b></div>
+            <div><span>HOSTILES DOWN</span><b id="stat-kills">0</b></div>
+          </div>
+          <div class="pause-actions">
+            <button id="continue" class="btn primary">CONTINUE EXPLORING <b>▸</b></button>
+            <button id="redeploy" class="btn">REDEPLOY</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading" class="hidden"><div class="loading-inner"><i></i><span>SYNCING</span></div></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
